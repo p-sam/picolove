@@ -25,6 +25,14 @@ local function _plot4points(lines, cx, cy, x, y)
 	end
 end
 
+local __spritesheetInvalidate = false
+local function _refresh_spritesheet()
+	if __spritesheetInvalidate then
+		pico8.spritesheet:replacePixels(pico8.spritesheet_data)
+		__spritesheetInvalidate = false
+	end
+end
+
 --------------------------------------------------------------------------------
 -- PICO-8 API
 
@@ -181,7 +189,6 @@ function api.tostr(val, hex)
 end
 
 function api.spr(n, x, y, w, h, flip_x, flip_y)
-	love.graphics.setShader(pico8.sprite_shader)
 	n = flr(n)
 	w = w or 1
 	h = h or 1
@@ -204,6 +211,8 @@ function api.spr(n, x, y, w, h, flip_x, flip_y)
 	if not q then
 		log("missing quad", n)
 	end
+	_refresh_spritesheet()
+	love.graphics.setShader(pico8.sprite_shader)
 	love.graphics.draw(
 		pico8.spritesheet,
 		q,
@@ -219,6 +228,7 @@ end
 function api.sspr(sx, sy, sw, sh, dx, dy, dw, dh, flip_x, flip_y)
 	dw = dw or sw
 	dh = dh or sh
+	_refresh_spritesheet()
 	-- FIXME: cache this quad
 	local q = love.graphics.newQuad(sx, sy, sw, sh, pico8.spritesheet:getDimensions())
 	love.graphics.setShader(pico8.sprite_shader)
@@ -419,6 +429,7 @@ function api.fillp(p)
 end
 
 function api.map(cel_x, cel_y, sx, sy, cel_w, cel_h, bitmask)
+	_refresh_spritesheet()
 	love.graphics.setShader(pico8.sprite_shader)
 	cel_x = flr(cel_x or 0)
 	cel_y = flr(cel_y or 0)
@@ -514,7 +525,7 @@ function api.sset(x, y, c)
 	c = flr(c or 0) % 16
 	if x >= 0 and x < 128 and y >= 0 and y < 128 then
 		pico8.spritesheet_data:setPixel(x, y, c / 15, 0, 0, 1)
-		pico8.spritesheet:refresh()
+		__spritesheetInvalidate = true
 	end
 end
 
@@ -696,11 +707,13 @@ function api.poke(addr, val)
 		local hi = flr(val / 16)
 		pico8.spritesheet_data:setPixel(addr * 2 % 128, flr(addr / 64), lo / 15, 0, 0, 1)
 		pico8.spritesheet_data:setPixel(addr * 2 % 128 + 1, flr(addr / 64), hi / 15, 0, 0, 1)
+		__spritesheetInvalidate = true
 	elseif addr < 0x2000 then
 		local lo = val % 16
 		local hi = flr(val / 16)
 		pico8.spritesheet_data:setPixel(addr * 2 % 128, flr(addr / 64), lo / 15, 0, 0, 1)
 		pico8.spritesheet_data:setPixel(addr * 2 % 128 + 1, flr(addr / 64), hi / 15, 0, 0, 1)
+		__spritesheetInvalidate = true
 		pico8.map[flr(addr / 128)][addr % 128] = val
 	elseif addr < 0x3000 then
 		addr = addr - 0x2000
