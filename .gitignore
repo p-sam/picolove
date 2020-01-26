@@ -1,0 +1,5 @@
+/build
+.DS_Store
+*.p8
+*.p8.png
+!nocart.p8
