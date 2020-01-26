@@ -1209,22 +1209,22 @@ function api.count(a)
 end
 
 function api.add(a, v)
-	if a == nil then
-		return
+	if a ~= nil then
+		a[#a + 1] = v
 	end
-	a[#a + 1] = v
+	return v
 end
 
 function api.del(a, dv)
-	if a == nil then
-		return
-	end
-	for i = 1, #a do
-		if a[i] == dv then
-			table.remove(a, i)
-			return
+	if a ~= nil then
+		for i = 1, #a do
+			if a[i] == dv then
+				table.remove(a, i)
+				break
+			end
 		end
 	end
+	return dv
 end
 
 return api
