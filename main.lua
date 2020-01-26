@@ -64,6 +64,7 @@ pico8={
 
 require("strict")
 local bit=require("bit")
+local MenuStack = require("menu")
 
 local flr, abs=math.floor, math.abs
 
@@ -81,7 +82,7 @@ local gif_canvas=nil
 local osc
 local host_time=0
 local retro_mode=false
-local paused=false
+local pauseMenu=nil
 local mobile=false
 local api, cart, gif
 
@@ -344,9 +345,11 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) 
 	api=require("api")
 	cart=require("cart")
 	gif=require("gif")
+	pauseMenu = MenuStack:new(pico8.screen, pico8.resolution)
 
 	-- load the cart
-	_load(argv[1] or 'nocart.p8')
+	print()
+	_load(argv[1] or (love.filesystem.getSource()..'/nocart.p8'))
 end
 
 local function inside(x, y, x0, y0, w, h)
@@ -399,7 +402,7 @@ local function update_buttons()
 			if not btn then
 				keypressed[i]=false
 			elseif not keypressed[i] then
-				pico8.keypressed.counter=init
+				pico8.keypressed.counter=init 
 				keypressed[i]=true
 			end
 		end
@@ -637,8 +640,13 @@ function love.keypressed(key)
 		love.event.quit()
 	elseif key=='v' and isCtrlOrGuiDown() then
 		pico8.clipboard=love.system.getClipboardText()
-	elseif key=='pause' then
-		paused=not paused
+	elseif key=='pause' or (key=='p' and isCtrlOrGuiDown()) then
+		if not pauseMenu:active() then
+			pauseMenu:push("- Paused -", {
+				{label="Back", callback=function() pauseMenu:back() end},
+				{label="Quit", callback=function() love.event.quit() end}
+			})
+		end
 	elseif key=='f1' or key=='f6' then
 		-- screenshot
 		local filename=cartname..'-'..os.time()..'.png'
@@ -748,9 +756,11 @@ function love.run()
 		local render=false
 		while dt>frametime do
 			host_time=host_time+dt
-			if paused then
-			else
-				if love.update then love.update(frametime) end -- will pass 0 if love.timer is disabled
+			if pauseMenu:active() then
+				update_buttons(false)
+				pauseMenu:input(pico8.keypressed[0])
+			elseif love.update then 
+				love.update(frametime) 
 			end
 			dt=dt-frametime
 			render=true
@@ -758,11 +768,10 @@ function love.run()
 
 		if render and love.graphics and love.graphics.isActive() then
 			love.graphics.origin()
-			if paused then
-				api.rectfill(64-4*4, 60, 64+4*4-2, 64+4+4, 1)
-				api.print("paused", 64-3*4, 64, (host_time*20)%8<4 and 7 or 13)
-			else
-				if love.draw then love.draw() end
+			if pauseMenu:active() then
+				pauseMenu:draw(host_time)
+			elseif love.draw then 
+				love.draw() 
 			end
 			-- draw the contents of pico screen to our screen
 			flip_screen()
@@ -770,10 +779,13 @@ function love.run()
 			pico8.mwheel=0
 		end
 
-		for i=1, pico8.audio_source:getFreeBufferCount() do
-			update_audio(pico8.audio_buffer)
-			pico8.audio_source:queue(pico8.audio_buffer)
-			pico8.audio_source:play()
+
+		if not pauseMenu:active() then
+			for i=1, pico8.audio_source:getFreeBufferCount() do
+				update_audio(pico8.audio_buffer)
+				pico8.audio_source:queue(pico8.audio_buffer)
+				pico8.audio_source:play()
+			end
 		end
 
 		if love.timer then love.timer.sleep(0.001) end
