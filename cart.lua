@@ -206,7 +206,7 @@ function cart.load_p8(filename)
 		-- decompress code
 		log("version", version)
 		if version > 8 then
-			error(string.format("unknown file version %d", version))
+			log(string.format("warning: unsupported cart version %d", version))
 		end
 
 		if compressed then
