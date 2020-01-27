@@ -1,0 +1,9 @@
+.editorconfig
+.gitignore
+.git/*
+README.md
+scripts/*
+build/*
+pkg/*
+.DS_Store
+Thumbs.db
