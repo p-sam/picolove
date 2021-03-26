@@ -5,7 +5,7 @@ PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd 
 BUILD_DIR="$PROJECT_DIR/build"
 
 LOVE_VER_WIN="11.3"
-LOVE_VER_NX="11.2-nx2"
+LOVE_VER_NX="11.3-nx3"
 APP_NAME="picolove"
 APP_AUTHOR="p-sam"
 APP_VERSION="$(cd "$PROJECT_DIR" && git describe --dirty --always --tags)"
@@ -46,7 +46,7 @@ zip -9 -r -x@pkg/ignore.txt "${BUILD_DIR}/${APP_NAME}.love" .
 if [[ "$1" == "windows" || "$1" == "win" || "$1" == "all" ]]; then
 	echo "* Packaging for Windows"
 	mkdir -p "${BUILD_DIR}/win"
-	http_download "https://bitbucket.org/rude/love/downloads/love-${LOVE_VER_WIN}-win64.zip" "${BUILD_DIR}/win/love-${LOVE_VER_WIN}-win64.zip"
+	http_download "https://github.com/love2d/love/releases/download/${LOVE_VER_WIN}/love-${LOVE_VER_WIN}-win64.zip" "${BUILD_DIR}/win/love-${LOVE_VER_WIN}-win64.zip"
 	unzip -u -o -q -d "${BUILD_DIR}/win" "${BUILD_DIR}/win/love-${LOVE_VER_WIN}-win64.zip"
 	mkdir -p "${BUILD_DIR}/win/publish"
 	cp -f "${BUILD_DIR}/win/love-${LOVE_VER_WIN}-win64"/*.dll "${BUILD_DIR}/win/publish"
